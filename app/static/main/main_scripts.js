@@ -91,4 +91,7 @@ function focusOnPlace(place) {
     // 지도 줌인 및 중심 이동
     map.setCenter(position);
     map.setLevel(3); // 지도 레벨(확대 정도) 설정
+
+    // 장소 상세 정보 가져오기
+
 }
