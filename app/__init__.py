@@ -25,7 +25,7 @@ def create_app():
     migrate.init_app(app, db)
 
     # 모델 임포트 (app에 migrate 반영 위해)
-    from app.auth.models import User, UserProfile
+    from app.models.models import User, UserProfile
     # Blueprint로 url 계층화 매핑
     from app.auth.routes import auth
     from app.main.routes import main

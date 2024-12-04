@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from .models import User, UserProfile
+from app.models.models import User, UserProfile
 
 from werkzeug.security import generate_password_hash, check_password_hash  # 비밀번호 해시화 라이브러리
 

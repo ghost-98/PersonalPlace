@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>내 장소 관리</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- 네비게이션 바 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">PersonalPlace</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/main/manage-myplace">내장소관리</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/auth/signup">회원가입</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/auth/login">로그인</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">내 장소 관리</h1>
+
+        <!-- 새 폴더 생성 -->
+        <div class="mb-3">
+            <input type="text" id="folder-name-input" class="form-control" placeholder="새 폴더 이름">
+            <button id="create-folder-btn" class="btn btn-primary mt-2">새 폴더 만들기</button>
+        </div>
+
+        <h3>폴더 목록</h3>
+        <div id="folder-list">
+            <!-- 동적으로 폴더 리스트가 여기에 추가됩니다. -->
+        </div>
+    </div>
+
+    <!-- 장소 추가 폼 (동적으로 보이게) -->
+    <div class="modal" tabindex="-1" id="add-place-modal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">장소 추가</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" id="place-name" class="form-control" placeholder="장소 이름">
+                    <!-- 장소에 대한 정보 -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="add-place-btn" class="btn btn-success">장소 추가</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 장소 사진 및 설명 추가 폼 -->
+    <div class="modal" tabindex="-1" id="add-place-info-modal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">장소 사진 및 설명 추가</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" id="place-image" class="form-control" placeholder="장소 이미지 URL">
+                    <textarea id="place-desc" class="form-control mt-2" placeholder="장소 설명"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="add-place-info-btn" class="btn btn-success">추가</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 폴더 목록 가져오기
+        function loadFolders() {
+            fetch('/get_folders')
+                .then(response => response.json())
+                .then(data => {
+                    const folderList = document.getElementById('folder-list');
+                    folderList.innerHTML = '';  // 기존 목록 초기화
+
+                    data.folders.forEach(folder => {
+                        const folderDiv = document.createElement('div');
+                        folderDiv.classList.add('folder');
+                        folderDiv.innerHTML = `
+                            <div class="folder-name">${folder.name}</div>
+                            <button class="btn btn-info mt-2" onclick="showAddPlaceForm(${folder.id})">장소 추가</button>
+                        `;
+                        folderList.appendChild(folderDiv);
+                    });
+                });
+        }
+
+        // 폴더 생성
+        document.getElementById('create-folder-btn').addEventListener('click', () => {
+            const folderName = document.getElementById('folder-name-input').value;
+            if (folderName) {
+                fetch('/create_folder', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name: folderName })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    loadFolders();  // 새 폴더 목록 갱신
+                    document.getElementById('folder-name-input').value = '';  // 입력창 초기화
+                });
+            }
+        });
+
+        // 장소 추가 폼 열기
+        function showAddPlaceForm(folderId) {
+            const modal = new bootstrap.Modal(document.getElementById('add-place-modal'));
+            modal.show();
+
+            // 장소 추가 버튼 클릭 시
+            document.getElementById('add-place-btn').onclick = () => {
+                const placeName = document.getElementById('place-name').value;
+
+                fetch(`/add_place/${folderId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name: placeName })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    currentPlaceId = data.place_id;  // 새로 추가된 장소 ID 저장
+                    modal.hide();
+                    showAddPlaceInfoForm();  // 장소 정보 추가 폼 열기
+                    loadFolders();  // 폴더 목록 갱신
+                });
+            };
+        }
+
+        // 장소 정보 추가 폼 열기
+        function showAddPlaceInfoForm() {
+            const modal = new bootstrap.Modal(document.getElementById('add-place-info-modal'));
+            modal.show();
+
+            // 장소 정보 추가 버튼 클릭 시
+            document.getElementById('add-place-info-btn').onclick = () => {
+                const placeImage = document.getElementById('place-image').value;
+                const placeDesc = document.getElementById('place-desc').value;
+
+                fetch(`/add_place_info/${currentPlaceId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ image: placeImage, desc: placeDesc })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    modal.hide();
+                    loadFolders();  // 폴더 목록 갱신
+                });
+            };
+        }
+
+        // 페이지 로드 시 폴더 목록 로드
+        window.onload = loadFolders;
+    </script>
+</body>
+</html>
