@@ -23,13 +23,20 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="/main/manage-myplace">내장소관리</a>
+                        <a class="nav-link" href="/my_places">내장소관리</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/auth/signup">회원가입</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/auth/login">로그인</a>
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.logout') }}">로그아웃</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.login') }}">로그인</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.signup') }}">회원가입</a>
+                        </li>
+                    {% endif %}
                     </li>
                 </ul>
             </div>

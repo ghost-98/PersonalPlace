@@ -1,4 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask_login import login_user, logout_user, login_required
+
 from app.models.models import User, UserProfile
 
 from werkzeug.security import generate_password_hash, check_password_hash  # 비밀번호 해시화 라이브러리
@@ -61,6 +63,7 @@ def login():
             user = User.query.filter_by(username=username).first()
 
             if user and check_password_hash(user.password, password):
+                login_user(user)  # 로그인 처리
                 flash('로그인 성공!', 'success')
                 return redirect(url_for('main.home'))
 
@@ -73,4 +76,12 @@ def login():
             flash('로그인 처리 중 문제가 발생했습니다. 다시 시도해주세요.', 'danger')
             return redirect(url_for('auth.login'))
 
+    return redirect(url_for('auth.login'))
+
+
+@auth.route('/logout')
+@login_required  # 로그인된 사용자만 접근 가능, 순서 라우팅보다 밑에
+def logout():
+    logout_user()  # 로그아웃 처리
+    flash('로그아웃 되었습니다.', 'info')
     return redirect(url_for('auth.login'))

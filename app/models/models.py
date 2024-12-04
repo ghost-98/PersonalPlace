@@ -1,9 +1,11 @@
-from app import db
 from sqlalchemy.sql import func
+from flask_login import UserMixin  # UserMixin을 상속받아 필요한 메서드 구현
+
+from app import db
 
 
 # User, UserProfile은 username으로 관계
-class User(db.Model):
+class User(db.Model, UserMixin):  # UserMixin 상속받기
     __tablename__ = 'user'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -16,6 +18,10 @@ class User(db.Model):
     created_time = db.Column(db.DateTime, nullable=False, server_default=func.now())
 
     # profile = db.relationship('UserProfile', back_populates='user', uselist=False)
+
+    # 사용할 orm 메서드 정의
+    def get_id(self):
+        return self.id
 
     # db 추가 후 커밋을 하나의 메서드로 정의
     def save_to_db(self):
