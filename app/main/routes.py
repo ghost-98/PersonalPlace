@@ -2,6 +2,7 @@ from flask import Blueprint, request, render_template, jsonify
 from flask_login import login_required, current_user
 
 from app.models.models import User, PlacesFolder, Place, PlaceInfo
+from app import db
 
 # root/__init__.py의 app.register_blueprint와 매핑
 main = Blueprint('main', __name__)
@@ -85,3 +86,17 @@ def add_place_info(place_id):
     place_info.save_to_db()
 
     return jsonify({'message': '장소 정보가 성공적으로 추가되었습니다'})
+
+
+@main.route('/remove_place/<int:folder_id>', methods=['DELETE'])
+@login_required
+def remove_place(folder_id):
+    data = request.get_json()
+    place_name = data.get('name')
+
+    place = Place.query.filter_by(folder_id=folder_id, place_name=place_name).first()
+    if place:
+        db.session.delete(place)
+        db.session.commit()
+        return jsonify({'message': '장소가 성공적으로 삭제되었습니다'})
+    return jsonify({'message': '장소를 찾을 수 없습니다'}), 404

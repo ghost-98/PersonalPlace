@@ -17,6 +17,7 @@ class User(db.Model, UserMixin):  # UserMixin 상속받기
     gender = db.Column(db.String(10), nullable=True)
     created_time = db.Column(db.DateTime, nullable=False, server_default=func.now())
 
+    folders = db.relationship('PlacesFolder', back_populates='owner')
     # profile = db.relationship('UserProfile', back_populates='user', uselist=False)
 
     # 사용할 orm 메서드 정의
@@ -50,6 +51,8 @@ class PlacesFolder(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     folder_name = db.Column(db.String(20), nullable=False)
+
+    owner = db.relationship('User', back_populates='folders')
 
     def save_to_db(self):
         db.session.add(self)

@@ -32,7 +32,11 @@ function searchPlaces() {
                 item.className = 'result-item';
                 item.innerHTML = `
                     <strong>${place.place_name}</strong><br>
-                    ${place.address_name || '주소 정보 없음'}
+                    ${place.address_name || '주소 정보 없음'}<br>
+                    ${place.phone || '전화번호 정보 없음'}<br>
+                    ${place.place_url}
+                    <button class="btn btn-sm btn-primary mt-2" onclick="showFolderSelectModal(${place.id}, '${place.place_name}')">추가</button>
+
                 `;
                 item.onclick = function () {
                     focusOnPlace(place); // 클릭 시 해당 장소로 줌인 및 마커 제거
@@ -95,3 +99,63 @@ function focusOnPlace(place) {
     // 장소 상세 정보 가져오기
 
 }
+
+function showFolderSelectModal(placeId, placeName) {
+    fetch('/get_folders')
+        .then(response => response.json())
+        .then(data => {
+            console.log(data);
+            const folderList = document.getElementById('folder-list');
+            folderList.innerHTML = '';
+
+            data.folders.forEach(folder => {
+                // 각 폴더 항목 생성
+                const folderItem = document.createElement('li');
+                folderItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+
+                folderItem.innerHTML = `
+                    ${folder.name}
+                    <button class="btn btn-sm btn-${folder.contains_place ? 'danger' : 'primary'}"
+                        onclick="togglePlaceInFolder(${placeId}, '${placeName}', ${folder.id}, ${folder.contains_place})">
+                        ${folder.contains_place ? '삭제' : '추가'}
+                    </button>
+                `;
+                folderList.appendChild(folderItem);
+            });
+
+            // 모달 창 열기
+            const modal = new bootstrap.Modal(document.getElementById('folder-modal'));
+            modal.show();
+        });
+}
+
+function togglePlaceInFolder(placeId, placeName, folderId, isContained) {
+    const url = isContained ? `/remove_place/${folderId}` : `/add_place/${folderId}`;
+    const method = isContained ? 'DELETE' : 'POST';
+
+    fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: placeName })
+    }).then(response => response.json())
+      .then(data => alert(data.message));
+}
+
+function createNewFolder() {
+    const folderName = document.getElementById('new-folder-name').value.trim();
+    if (!folderName) {
+        alert('폴더 이름을 입력하세요.');
+        return;
+    }
+
+    fetch('/create_folder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: folderName })
+    }).then(response => response.json())
+      .then(data => {
+          alert(data.message);
+          showFolderSelectModal(); // 새로고침하여 폴더 목록 업데이트
+      });
+}
+
