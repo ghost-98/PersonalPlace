@@ -138,7 +138,12 @@ function togglePlaceInFolder(placeId, placeName, folderId, isContained) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: placeName })
     }).then(response => response.json())
-      .then(data => alert(data.message));
+      .then(data => {
+          alert(data.message)
+
+          const modal = bootstrap.Modal.getInstance(document.getElementById('folder-modal'));
+          modal.hide(); // 모달 닫기
+      });
 }
 
 function createNewFolder() {
@@ -156,6 +161,15 @@ function createNewFolder() {
       .then(data => {
           alert(data.message);
           showFolderSelectModal(); // 새로고침하여 폴더 목록 업데이트
+
+        // 모달 닫기
+        const modalElement = document.getElementById('folder-modal');
+        if (modalElement) {
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.hide();
+            }
+        }
       });
 }
 

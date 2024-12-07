@@ -54,6 +54,9 @@ class PlacesFolder(db.Model):
 
     owner = db.relationship('User', back_populates='folders')
 
+    # 폴더 삭제 시 연결된 장소와 장소 정보도 자동으로 삭제되도록 설정
+    places = db.relationship('Place', back_populates='folder', cascade='all, delete-orphan', passive_deletes=True)
+
     def save_to_db(self):
         db.session.add(self)
         db.session.commit()
@@ -66,6 +69,8 @@ class Place(db.Model):
     folder_id = db.Column(db.Integer, db.ForeignKey('places_folder.id'), nullable=False)
     place_name = db.Column(db.String(50), nullable=False)
 
+    folder = db.relationship('PlacesFolder', back_populates='places')
+    place_info = db.relationship('PlaceInfo', back_populates='place', cascade='all, delete', passive_deletes=True)
 
     def save_to_db(self):
         db.session.add(self)
@@ -79,6 +84,8 @@ class PlaceInfo(db.Model):
     place_id = db.Column(db.Integer, db.ForeignKey('place.id'), nullable=False)
     place_image = db.Column(db.String(255), nullable=True)
     place_desc = db.Column(db.String(255), nullable=True)
+
+    place = db.relationship('Place', back_populates='place_info')
 
     def save_to_db(self):
         db.session.add(self)

@@ -1,8 +1,6 @@
 from flask import Blueprint, request, render_template, jsonify
 from flask_login import login_required, current_user
 
-from werkzeug.utils import secure_filename
-
 from app.models.models import User, PlacesFolder, Place, PlaceInfo
 from app import db
 
@@ -82,6 +80,8 @@ def rename_folder(folder_id):
 def remove_folder(folder_id):
     folder = PlacesFolder.query.get(folder_id)
     if folder and folder.owner_id == current_user.id:
+        Place.query.filter_by(folder_id=folder_id).delete()
+
         db.session.delete(folder)
         db.session.commit()
         return jsonify({'message': '폴더가 삭제되었습니다'})
