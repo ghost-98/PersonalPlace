@@ -1,6 +1,8 @@
 from flask import Blueprint, request, render_template, jsonify
 from flask_login import login_required, current_user
 
+from werkzeug.utils import secure_filename
+
 from app.models.models import User, PlacesFolder, Place, PlaceInfo
 from app import db
 
@@ -59,6 +61,21 @@ def create_folder():
     return jsonify({'message': '폴더가 성공적으로 생성되었습니다'})
 
 
+# 폴더 이름 변경
+@main.route('/rename_folder/<int:folder_id>', methods=['PUT'])
+@login_required
+def rename_folder(folder_id):
+    data = request.get_json()
+    new_name = data.get('name')
+
+    folder = PlacesFolder.query.get(folder_id)
+    if folder and folder.owner_id == current_user.id:
+        folder.folder_name = new_name
+        db.session.commit()
+        return jsonify({'message': '폴더 이름이 변경되었습니다'})
+    return jsonify({'message': '폴더를 찾을 수 없습니다'}), 404
+
+
 # 폴더 삭제
 @main.route('/remove_folder/<int:folder_id>', methods=['DELETE'])
 @login_required
@@ -94,23 +111,32 @@ def add_place(folder_id):
     return jsonify({'message': '장소가 성공적으로 추가되었습니다'})
 
 
-# 폴더에서 장소 삭제
-@main.route('/remove_place/<int:place_id>', methods=['DELETE'])
+# 폴더 다중 장소 삭제
+@main.route('/remove_places', methods=['DELETE'])
 @login_required
-def remove_place(place_id):
-    place = Place.query.get(place_id)
-    if place:
+def remove_places():
+    data = request.get_json()
+    place_ids = data.get('place_ids', [])
+
+    if not place_ids:
+        return jsonify({'message': '삭제할 장소가 없습니다'}), 400
+
+    places = Place.query.filter(Place.id.in_(place_ids), Place.folder_id.in_(
+        [folder.id for folder in PlacesFolder.query.filter_by(owner_id=current_user.id).all()]
+    )).all()
+
+    for place in places:
         db.session.delete(place)
-        db.session.commit()
-        return jsonify({'message': '장소가 삭제되었습니다'})
-    return jsonify({'message': '장소를 찾을 수 없습니다'}), 404
+
+    db.session.commit()
+    return jsonify({'message': f'{len(places)}개의 장소가 삭제되었습니다'})
 
 
 # 장소에 정보 추가 (이미지, 설명)
 @main.route('/add_place_info/<int:place_id>', methods=['POST'])
 @login_required
 def add_place_info(place_id):
-    data = request.get_json()
+    data = request.form  # FormData로 받은 값 처리
     place_image = data.get('image')
     place_desc = data.get('desc')
 
@@ -119,3 +145,4 @@ def add_place_info(place_id):
     place_info.save_to_db()
 
     return jsonify({'message': '장소 정보가 성공적으로 추가되었습니다'})
+

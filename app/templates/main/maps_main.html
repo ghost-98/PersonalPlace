@@ -24,10 +24,14 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/my_places">내장소관리</a>
-                    </li>
                     {% if current_user.is_authenticated %}
+                        <!-- 사용자 이름과 인사 -->
+                        <li class="nav-item">
+                            <span class="nav-link">{{ current_user.username }}님 안녕하세요</span>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/my_places">내장소관리</a>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('auth.logout') }}">로그아웃</a>
                         </li>
