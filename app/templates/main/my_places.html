@@ -31,12 +31,27 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .folder-header:hover {
+            background-color: #dee2e6;
         }
         .folder-header h5 {
+            font-size: 1.25rem;
+            font-weight: bold;
             margin: 0;
         }
+        .folder-actions {
+            display: flex;
+            gap: 8px;
+        }
         .folder-actions button {
-            margin-left: 5px;
+            padding: 6px 12px;
+            font-size: 0.9rem;
         }
         .accordion-button {
             font-size: 1rem;
@@ -49,9 +64,6 @@
             padding: 10px;
             max-height: 300px;
             overflow-y: auto;
-        }
-        .btn-warning, .btn-danger {
-            font-size: 0.8rem;
         }
         .folder-input-group {
             display: flex;
@@ -69,9 +81,6 @@
         .place-item button {
             margin-left: 10px;
         }
-        .delete-selected-btn {
-            margin-top: 20px;
-        }
     </style>
 </head>
 <body>
@@ -85,7 +94,6 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     {% if current_user.is_authenticated %}
-                        <!-- 사용자 이름과 인사 -->
                         <li class="nav-item">
                             <span class="nav-link">{{ current_user.username }}님 안녕하세요</span>
                         </li>
@@ -169,31 +177,31 @@
                         folderItem.classList.add('folder-item');
 
                         folderItem.innerHTML = `
-                            <div class="folder-header">
+                            <div class="folder-header" onclick="toggleAccordion(${folder.id})">
                                 <h5>${folder.name}</h5>
                                 <div class="folder-actions">
-                                    <button class="btn btn-warning btn-sm" onclick="renameFolder(${folder.id}, '${folder.name}')">이름 변경</button>
-                                    <button class="btn btn-danger btn-sm" onclick="deleteFolder(${folder.id})">폴더 삭제</button>
+                                    <button class="btn btn-warning btn-sm" onclick="renameFolder(${folder.id}, '${folder.name}')">
+                                        <i class="bi bi-pencil-square"></i> 이름 변경
+                                    </button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteFolder(${folder.id})">
+                                        <i class="bi bi-trash"></i> 삭제
+                                    </button>
                                 </div>
                             </div>
                             <div class="accordion" id="accordion-${folder.id}">
                                 <div class="accordion-item">
                                     <h2 class="accordion-header" id="heading-${folder.id}">
-                                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${folder.id}" aria-expanded="true" aria-controls="collapse-${folder.id}">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${folder.id}" aria-expanded="false" aria-controls="collapse-${folder.id}">
                                             장소 목록
                                         </button>
                                     </h2>
                                     <div id="collapse-${folder.id}" class="accordion-collapse collapse" aria-labelledby="heading-${folder.id}" data-bs-parent="#accordion-${folder.id}">
-                                        <div id="places-list-${folder.id}" class="accordion-body">
-                                            <!-- 장소 목록 -->
-                                        </div>
-                                        <!-- 선택된 장소 삭제 버튼 추가 -->
+                                        <div id="places-list-${folder.id}" class="accordion-body"></div>
                                         <button class="btn btn-danger btn-sm delete-selected-btn" onclick="deleteSelectedPlaces(${folder.id})">선택된 장소 삭제</button>
                                     </div>
                                 </div>
                             </div>
                         `;
-
                         folderList.appendChild(folderItem);
                         loadPlaces(folder.id);
                     });
@@ -234,6 +242,11 @@
             }
         }
 
+        function toggleAccordion(folderId) {
+            const accordionButton = document.querySelector(`#collapse-${folderId}`);
+            accordionButton.classList.toggle('show');
+        }
+
         // 장소 목록 가져오기
         function loadPlaces(folderId) {
             fetch(`/get_places/${folderId}`)
@@ -255,28 +268,18 @@
                 });
         }
 
-        // 장소 이름 클릭 시 해당 장소의 이미지와 설명 보기
-        function showPlaceDetails(placeId) {
-            fetch(`/get_place_info/${placeId}`)
-                .then(response => response.json())
-                .then(data => {
-                    alert(`장소: ${data.place_name}\n설명: ${data.place_desc}\n이미지: ${data.place_image}`);
-                });
-        }
-
+        // 장소 기록 추가 모달
         function showPlaceRecordModal(placeId) {
             const modal = new bootstrap.Modal(document.getElementById('placeRecordModal'));
             modal.show();
             window.currentPlaceId = placeId;
         }
 
-        // 장소에 정보 추가
+        // 장소 정보 추가
         function addPlaceInfo() {
-            // 모달 내의 이미지 파일과 설명을 가져옴
-            const placeImage = document.getElementById('place-image') ? document.getElementById('place-image').files[0] : null;
-            const placeDesc = document.getElementById('place-description') ? document.getElementById('place-description').value : '';
+            const placeImage = document.getElementById('place-image').files[0];
+            const placeDesc = document.getElementById('place-description').value;
 
-            // 요소가 존재하고 입력 값이 있는지 확인
             if (placeImage && placeDesc) {
                 const formData = new FormData();
                 formData.append('image', placeImage);
@@ -299,11 +302,13 @@
             }
         }
 
-
         // 폴더 삭제
         function deleteFolder(folderId) {
-            fetch(`/remove_folder/${folderId}`, { method: 'DELETE' })
-                .then(() => loadFolders());
+            const confirmation = confirm("정말로 이 폴더를 삭제하시겠습니까?");
+            if (confirmation) {
+                fetch(`/remove_folder/${folderId}`, { method: 'DELETE' })
+                    .then(() => loadFolders());
+            }
         }
 
         // 선택된 장소 삭제
@@ -312,14 +317,18 @@
             const placeIds = Array.from(checkboxes).map(checkbox => checkbox.getAttribute('data-place-id'));
 
             if (placeIds.length > 0) {
-                fetch(`/remove_places`, {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ place_ids: placeIds })
-                }).then(() => loadPlaces(folderId));
+                const confirmation = confirm("선택된 장소를 삭제하시겠습니까?");
+                if (confirmation) {
+                    fetch(`/remove_places`, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ place_ids: placeIds })
+                    }).then(() => loadPlaces(folderId));
+                }
+            } else {
+                alert("삭제할 장소를 선택해주세요.");
             }
         }
-
         // 페이지 로드 시 폴더 목록 로드
         window.onload = loadFolders;
     </script>
