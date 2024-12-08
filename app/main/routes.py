@@ -93,7 +93,7 @@ def remove_folder(folder_id):
 @login_required
 def get_places(folder_id):
     places = Place.query.filter_by(folder_id=folder_id).all()
-    place_data = [{'id': place.id, 'name': place.place_name} for place in places]
+    place_data = [{'id': place.id, 'name': place.place_name, 'y': place.latitude, 'x': place.longitude} for place in places]
     return jsonify({'places': place_data})
 
 
@@ -103,9 +103,20 @@ def get_places(folder_id):
 def add_place(folder_id):
     data = request.get_json()
     place_name = data.get('name')
+    place_address = data.get('address')
+    place_longitude = data.get('x')
+    place_latitude = data.get('y')
+    place_url = data.get('url')
 
     # 새 장소 생성
-    new_place = Place(folder_id=folder_id, place_name=place_name)
+    new_place = Place(
+        folder_id=folder_id,
+        place_name=place_name,
+        address=place_address,
+        longitude=place_longitude,
+        latitude=place_latitude,
+        url=place_url
+    )
     new_place.save_to_db()
 
     return jsonify({'message': '장소가 성공적으로 추가되었습니다'})

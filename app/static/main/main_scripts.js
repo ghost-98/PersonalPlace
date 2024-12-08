@@ -50,9 +50,7 @@ function showFolderPanel() {
         });
 }
 
-// 기본적으로 장소 검색 화면을 보여주기
-showSearchPanel();
-
+// 장소 검색
 function searchPlaces() {
     var keyword = document.getElementById('keyword').value.trim();
     if (!keyword) {
@@ -76,8 +74,9 @@ function searchPlaces() {
                     ${place.address_name || '주소 정보 없음'}<br>
                     ${place.phone || '전화번호 정보 없음'}<br>
                     ${place.place_url}
-                    <button class="btn btn-sm btn-primary mt-2" onclick="showFolderSelectModal(${place.id}, '${place.place_name}')">추가</button>
-
+                    <button class="btn btn-sm btn-primary mt-2" onclick="showFolderSelectModal(
+                        ${parseInt(place.id)}, '${place.place_name}', '${place.address_name}', ${parseFloat(place.x)}, ${parseFloat(place.y)}, '${place.place_url}'
+                    )">추가</button>
                 `;
                 item.onclick = function () {
                     focusOnPlace(place); // 클릭 시 해당 장소로 줌인 및 마커 제거
@@ -85,7 +84,7 @@ function searchPlaces() {
                 resultsContainer.appendChild(item);
 
                 // 마커 생성 및 지도에 추가
-                createMarker(place);
+                handlePlace(place);
             });
 
             // 모든 마커가 보이도록 지도 범위 설정
@@ -96,13 +95,14 @@ function searchPlaces() {
     });
 }
 
-// 마커 생성 함수
-function createMarker(place) {
+// 공통 마커 생성 및 줌인 기능
+function handlePlace(place, focus = false) {
     var position = new kakao.maps.LatLng(place.y, place.x);
     var marker = new kakao.maps.Marker({
         position: position,
         map: map
     });
+
     markers.push(marker); // 마커를 배열에 저장
 
     // 마커 위에 이름 표시
@@ -113,6 +113,13 @@ function createMarker(place) {
 
     // 마커 위치를 지도의 범위에 포함
     bounds.extend(position);
+
+    // 만약 focus가 true라면 해당 장소로 줌인 및 마커 제거
+    if (focus) {
+        removeAllMarkers(); // 기존 마커 제거
+        map.setCenter(position);
+        map.setLevel(3); // 지도 레벨(확대 정도) 설정
+    }
 }
 
 // 모든 마커 제거
@@ -121,32 +128,18 @@ function removeAllMarkers() {
     markers = []; // 배열 초기화
 }
 
-// 특정 장소로 줌인 및 나머지 마커 제거
+// 마커 클릭 시 장소에 줌인 기능을 처리하는 함수
 function focusOnPlace(place) {
-    removeAllMarkers(); // 기존 마커 제거
-    var position = new kakao.maps.LatLng(place.y, place.x);
-
-    // 단일 마커 생성
-    var marker = new kakao.maps.Marker({
-        position: position,
-        map: map
-    });
-    markers.push(marker); // 단일 마커를 배열에 추가
-
-    // 지도 줌인 및 중심 이동
-    map.setCenter(position);
-    map.setLevel(3); // 지도 레벨(확대 정도) 설정
-
-    // 장소 상세 정보 가져오기
-
+    handlePlace(place, true); // 마커 클릭 시 해당 장소로 줌인 및 마커 표시
 }
 
-function showFolderSelectModal(placeId, placeName) {
+// 장소 추가 시 생성 되는 폴더 선택 모달
+function showFolderSelectModal(placeId, placeName, placeAddress, placeX, placeY, placeUrl) {
     fetch('/get_folders')
         .then(response => response.json())
         .then(data => {
             console.log(data);
-            const folderList = document.getElementById('folder-list');
+            const folderList = document.getElementById('folder-list-modal');
             folderList.innerHTML = '';
 
             data.folders.forEach(folder => {
@@ -156,9 +149,8 @@ function showFolderSelectModal(placeId, placeName) {
 
                 folderItem.innerHTML = `
                     ${folder.name}
-                    <button class="btn btn-sm btn-${folder.contains_place ? 'danger' : 'primary'}"
-                        onclick="togglePlaceInFolder(${placeId}, '${placeName}', ${folder.id}, ${folder.contains_place})">
-                        ${folder.contains_place ? '삭제' : '추가'}
+                    <button class="btn btn-sm btn-primary"
+                        onclick="addPlaceToFolder(${folder.id}, '${placeName}', '${placeAddress}', ${placeX}, ${placeY}, '${placeUrl}')">추가
                     </button>
                 `;
                 folderList.appendChild(folderItem);
@@ -167,24 +159,39 @@ function showFolderSelectModal(placeId, placeName) {
             // 모달 창 열기
             const modal = new bootstrap.Modal(document.getElementById('folder-modal'));
             modal.show();
+        })
+        .catch(error => {
+            console.error('Failed to fetch folders:', error);
+            alert('폴더 목록을 가져오는 데 실패했습니다.');
         });
 }
 
-function togglePlaceInFolder(placeId, placeName, folderId, isContained) {
-    const url = isContained ? `/remove_place/${folderId}` : `/add_place/${folderId}`;
-    const method = isContained ? 'DELETE' : 'POST';
+// 장소를 폴더에 추가하는 함수
+function addPlaceToFolder(folderId, placeName, placeAddress, placeX, placeY, placeUrl) {
+    console.log(placeName, placeAddress, placeX, placeY, placeUrl); // 여기서 전달된 값들을 확인합니다.
 
-    fetch(url, {
-        method: method,
+    fetch(`/add_place/${folderId}`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: placeName })
-    }).then(response => response.json())
-      .then(data => {
-          alert(data.message)
+        body: JSON.stringify({ name: placeName, address: placeAddress, x: placeX, y: placeY, url: placeUrl })
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message);
 
-          const modal = bootstrap.Modal.getInstance(document.getElementById('folder-modal'));
-          modal.hide(); // 모달 닫기
-      });
+        // 모달 닫기
+        const modalElement = document.getElementById('folder-modal');
+        if (modalElement) {
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.hide();
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Failed to add place:', error);
+        alert('장소 추가에 실패했습니다.');
+    });
 }
 
 function createNewFolder() {

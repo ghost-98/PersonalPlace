@@ -68,6 +68,10 @@ class Place(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     folder_id = db.Column(db.Integer, db.ForeignKey('places_folder.id'), nullable=False)
     place_name = db.Column(db.String(50), nullable=False)
+    address = db.Column(db.String(50), nullable=False)
+    longitude = db.Column(db.Float, nullable=False)
+    latitude = db.Column(db.Float, nullable=False)
+    url = db.Column(db.String(100), nullable=False)
 
     folder = db.relationship('PlacesFolder', back_populates='places')
     place_info = db.relationship('PlaceInfo', back_populates='place', cascade='all, delete', passive_deletes=True)

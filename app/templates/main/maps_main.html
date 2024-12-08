@@ -65,6 +65,9 @@
                 <input type="text" id="keyword" placeholder="장소를 검색하세요" class="form-control">
                 <button class="btn btn-primary w-100 mt-2" onclick="searchPlaces()">검색</button>
             </div>
+            <div id="search-results" class="search-results">
+                <!-- 검색 결과가 여기에 동적으로 추가됩니다 -->
+            </div>
 
             <!-- 내 폴더 부분 (숨겨져 있음) -->
             <div id="folder-panel" class="folder-box" style="display: none;">
@@ -81,11 +84,6 @@
         </div>
     </div>
 
-    <!-- 장소 상세 정보 표시 부분 -->
-    <div id="place-details" class="container mt-4">
-        <!-- 상세 정보가 여기에 표시됩니다 -->
-    </div>
-
     <!-- Custom JavaScript -->
     <script src="{{ url_for('static', filename='main/main_scripts.js') }}"></script>
 
@@ -98,7 +96,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <ul id="folder-list" class="list-group">
+                    <ul id="folder-list-modal" class="list-group">
                         <!-- 폴더 목록이 동적으로 추가됩니다 -->
                     </ul>
                     <div class="mt-3">
