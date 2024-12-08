@@ -95,7 +95,7 @@
                 <ul class="navbar-nav ms-auto">
                     {% if current_user.is_authenticated %}
                         <li class="nav-item">
-                            <span class="nav-link">{{ current_user.username }}님 안녕하세요</span>
+                            <span class="nav-link">{{ current_user.name }}님 안녕하세요</span>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="/maps_main">지도</a>
@@ -117,16 +117,17 @@
     </nav>
 
     <div class="container mt-5">
-        <h1 class="text-center mb-4">내 장소 관리</h1>
+        <h1 class="text-center mb-4"><strong>{{ current_user.name }}</strong>님의 장소 관리</h1>
 
         <!-- 새 폴더 생성 -->
-        <div class="mb-4 folder-input-group">
-            <input type="text" id="folder-name-input" class="form-control" placeholder="새 폴더 이름">
-            <button id="create-folder-btn" class="btn btn-primary mt-2">새 폴더 만들기</button>
+        <div class="d-flex justify-content-center mb-4">
+            <div class="d-flex justify-content-center align-items-center">
+                <input type="text" id="folder-name-input" class="form-control" placeholder="새 폴더 이름" style="max-width: 300px;">
+                <button id="create-folder-btn" class="btn btn-primary ms-2 " style="white-space: nowrap;">폴더 생성</button>
+            </div>
         </div>
 
-        <h3>폴더 목록</h3>
-        <div id="folder-list">
+        <div id="folder-list" class="mt-4">
             <!-- 폴더 목록 -->
         </div>
     </div>

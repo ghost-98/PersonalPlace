@@ -6,6 +6,65 @@
     <title>PersonalPlace - 내 장소 관리</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Custom Styles */
+        body {
+            background-color: #f8f9fa;  /* 부드러운 회색 배경 */
+            font-family: 'Arial', sans-serif;
+        }
+
+        .navbar {
+            background-color: #343a40; /* 네이비 블랙 */
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;  /* 로고 크기 조정 */
+        }
+
+        .container {
+            max-width: 960px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #343a40;
+            font-weight: bold;
+        }
+
+        p {
+            font-size: 1.2rem;
+            color: #6c757d;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+            font-size: 1rem;
+            padding: 10px 20px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);  /* 버튼 호버 시 약간 올라가는 효과 */
+        }
+
+        .btn-info {
+            background-color: #17a2b8;
+            border-color: #17a2b8;
+            font-size: 1rem;
+            padding: 10px 20px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+
+        .btn-info:hover {
+            background-color: #138496;
+            transform: translateY(-2px);  /* 버튼 호버 시 약간 올라가는 효과 */
+        }
+    </style>
 </head>
 <body>
     <!-- 네비게이션 바 -->
@@ -20,7 +79,7 @@
                     {% if current_user.is_authenticated %}
                         <!-- 사용자 이름과 인사 -->
                         <li class="nav-item">
-                            <span class="nav-link">{{ current_user.username }}님 안녕하세요</span>
+                            <span class="nav-link">{{ current_user.name }}님 안녕하세요</span>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('auth.logout') }}">로그아웃</a>
@@ -42,7 +101,7 @@
     <div class="container mt-5">
         <div class="row justify-content-center">
             <div class="col-md-8 text-center">
-                <h1 class="mb-4">PersonalPlace에 오신 것을 환영합니다!</h1>
+                <h1 class="mb-4">환영합니다 PersonalPlace입니다!</h1>
                 <p>나만의 장소를 관리하고, 새로운 장소를 추가하세요.</p>
                 <div class="d-flex justify-content-center gap-3">
                     <a href="/maps_main" class="btn btn-primary">지도 보기</a>

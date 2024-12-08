@@ -12,6 +12,47 @@ var ps = new kakao.maps.services.Places();
 var markers = []; // 생성된 마커를 관리하는 배열
 var bounds = new kakao.maps.LatLngBounds(); // 검색 결과를 모두 포함하도록 지도의 범위를 설정
 
+// 현재 활성화된 패널을 보여주는 함수
+function showSearchPanel() {
+    // 왼쪽 패널을 장소 검색 화면으로 변경
+    document.getElementById('search-panel').style.display = 'block';
+    document.getElementById('folder-panel').style.display = 'none';
+
+    // 버튼 상태 변경
+    document.getElementById('search-btn').classList.add('btn-primary');
+    document.getElementById('folder-btn').classList.remove('btn-secondary');
+    document.getElementById('folder-btn').classList.add('btn-outline-secondary');
+}
+
+function showFolderPanel() {
+    // 왼쪽 패널을 내 폴더 화면으로 변경
+    document.getElementById('folder-panel').style.display = 'block';
+    document.getElementById('search-panel').style.display = 'none';
+
+    // 버튼 상태 변경
+    document.getElementById('folder-btn').classList.add('btn-primary');
+    document.getElementById('search-btn').classList.remove('btn-secondary');
+    document.getElementById('search-btn').classList.add('btn-outline-secondary');
+
+    // 폴더 목록 가져오기 (예: 서버에서 폴더 데이터를 받아옴)
+    fetch('/get_folders')
+        .then(response => response.json())
+        .then(data => {
+            const folderList = document.getElementById('folder-list');
+            folderList.innerHTML = ''; // 기존 목록 지우기
+
+            data.folders.forEach(folder => {
+                const folderItem = document.createElement('li');
+                folderItem.className = 'list-group-item';
+                folderItem.innerHTML = folder.name;
+                folderList.appendChild(folderItem);
+            });
+        });
+}
+
+// 기본적으로 장소 검색 화면을 보여주기
+showSearchPanel();
+
 function searchPlaces() {
     var keyword = document.getElementById('keyword').value.trim();
     if (!keyword) {
