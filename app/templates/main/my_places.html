@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>내 장소 관리</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Custom Styles */
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Arial', sans-serif;
+        }
+        .navbar {
+            background-color: #343a40;
+        }
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .container {
+            max-width: 960px;
+        }
+        .folder-item {
+            margin-bottom: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        .folder-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .folder-header:hover {
+            background-color: #dee2e6;
+        }
+        .folder-header h5 {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin: 0;
+        }
+        .folder-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .folder-actions button {
+            padding: 6px 12px;
+            font-size: 0.9rem;
+        }
+        .accordion-button {
+            font-size: 1rem;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        .accordion-body {
+            padding: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .folder-input-group {
+            display: flex;
+            align-items: center;
+        }
+        .folder-input-group input {
+            flex: 1;
+        }
+        .place-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .place-item button {
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 네비게이션 바 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">PersonalPlace</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <span class="nav-link">{{ current_user.name }}님 안녕하세요</span>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/maps_main">지도</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.logout') }}">로그아웃</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.login') }}">로그인</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.signup') }}">회원가입</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <h1 class="text-center mb-4"><strong>{{ current_user.name }}</strong>님의 장소 관리</h1>
+
+        <!-- 새 폴더 생성 -->
+        <div class="d-flex justify-content-center mb-4">
+            <div class="d-flex justify-content-center align-items-center">
+                <input type="text" id="folder-name-input" class="form-control" placeholder="새 폴더 이름" style="max-width: 300px;">
+                <button id="create-folder-btn" class="btn btn-primary ms-2 " style="white-space: nowrap;">폴더 생성</button>
+            </div>
+        </div>
+
+        <div id="folder-list" class="mt-4">
+            <!-- 폴더 목록 -->
+        </div>
+    </div>
+
+    <!-- 장소 기록 추가 모달 -->
+    <div class="modal fade" id="placeRecordModal" tabindex="-1" aria-labelledby="placeRecordModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="placeRecordModalLabel">장소 기록 추가</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="place-record-form">
+                        <div class="mb-3">
+                            <label for="place-description" class="form-label">장소 설명</label>
+                            <textarea class="form-control" id="place-description" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="place-image" class="form-label">장소 이미지</label>
+                            <input type="file" class="form-control" id="place-image">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                    <button type="button" class="btn btn-primary" onclick="addPlaceInfo(currentPlaceId)">저장</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- bootstrap for 모달 -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentPlaceId = null;  // 현재 선택된 장소 ID
+
+        // 폴더 목록 가져오기
+        function loadFolders() {
+            fetch('/get_folders')
+                .then(response => response.json())
+                .then(data => {
+                    const folderList = document.getElementById('folder-list');
+                    folderList.innerHTML = '';
+
+                    data.folders.forEach(folder => {
+                        const folderItem = document.createElement('div');
+                        folderItem.classList.add('folder-item');
+
+                        folderItem.innerHTML = `
+                            <div class="folder-header" onclick="toggleAccordion(${folder.id})">
+                                <h5>${folder.name}</h5>
+                                <div class="folder-actions">
+                                    <button class="btn btn-warning btn-sm" onclick="renameFolder(${folder.id}, '${folder.name}')">
+                                        <i class="bi bi-pencil-square"></i> 이름 변경
+                                    </button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteFolder(${folder.id})">
+                                        <i class="bi bi-trash"></i> 삭제
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="accordion" id="accordion-${folder.id}">
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="heading-${folder.id}">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${folder.id}" aria-expanded="false" aria-controls="collapse-${folder.id}">
+                                            장소 목록
+                                        </button>
+                                    </h2>
+                                    <div id="collapse-${folder.id}" class="accordion-collapse collapse" aria-labelledby="heading-${folder.id}" data-bs-parent="#accordion-${folder.id}">
+                                        <div id="places-list-${folder.id}" class="accordion-body"></div>
+                                        <button class="btn btn-danger btn-sm delete-selected-btn" onclick="deleteSelectedPlaces(${folder.id})">선택된 장소 삭제</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        folderList.appendChild(folderItem);
+                        loadPlaces(folder.id);
+                    });
+                });
+        }
+
+        // 폴더 생성
+        document.getElementById('create-folder-btn').addEventListener('click', () => {
+            const folderName = document.getElementById('folder-name-input').value;
+            if (folderName) {
+                fetch('/create_folder', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: folderName })
+                }).then(() => {
+                    loadFolders();
+                    document.getElementById('folder-name-input').value = '';
+                });
+            }
+        });
+
+        // 폴더 이름 변경
+        function renameFolder(folderId, currentName) {
+            const newName = prompt("새 폴더 이름을 입력하세요:", currentName);
+            if (newName && newName.trim() !== "" && newName !== currentName) {
+                fetch(`/rename_folder/${folderId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: newName })
+                })
+                .then(response => {
+                    if (response.ok) {
+                        loadFolders();
+                    } else {
+                        alert("폴더 이름 변경에 실패했습니다.");
+                    }
+                });
+            }
+        }
+
+        function toggleAccordion(folderId) {
+            const accordionButton = document.querySelector(`#collapse-${folderId}`);
+            accordionButton.classList.toggle('show');
+        }
+
+        // 장소 목록 가져오기
+        function loadPlaces(folderId) {
+            fetch(`/get_places/${folderId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const placesList = document.getElementById(`places-list-${folderId}`);
+                    placesList.innerHTML = '';
+
+                    data.places.forEach(place => {
+                        const placeItem = document.createElement('div');
+                        placeItem.classList.add('place-item');
+                        placeItem.innerHTML = `
+                            <input type="checkbox" class="form-check-input me-2 place-checkbox" data-folder-id="${folderId}" data-place-id="${place.id}">
+                            <span>${place.name}</span>
+                            <button class="btn btn-sm btn-primary" onclick="showPlaceRecordModal(${place.id})">기록 추가</button>
+                        `;
+                        placesList.appendChild(placeItem);
+                    });
+                });
+        }
+
+        // 장소 기록 추가 모달
+        function showPlaceRecordModal(placeId) {
+            const modal = new bootstrap.Modal(document.getElementById('placeRecordModal'));
+            modal.show();
+            window.currentPlaceId = placeId;
+        }
+
+        // 장소 정보 추가
+        function addPlaceInfo() {
+            const placeImage = document.getElementById('place-image').files[0];
+            const placeDesc = document.getElementById('place-description').value;
+
+            if (placeImage && placeDesc) {
+                const formData = new FormData();
+                formData.append('image', placeImage);
+                formData.append('desc', placeDesc);
+
+                fetch(`/add_place_info/${window.currentPlaceId}`, {
+                    method: 'POST',
+                    body: formData
+                }).then(response => {
+                    if (response.ok) {
+                        alert('장소 정보가 추가되었습니다');
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('placeRecordModal'));
+                        modal.hide();
+                    } else {
+                        alert('장소 정보 추가에 실패했습니다');
+                    }
+                });
+            } else {
+                alert('이미지와 설명을 모두 입력해야 합니다');
+            }
+        }
+
+        // 폴더 삭제
+        function deleteFolder(folderId) {
+            const confirmation = confirm("정말로 이 폴더를 삭제하시겠습니까?");
+            if (confirmation) {
+                fetch(`/remove_folder/${folderId}`, { method: 'DELETE' })
+                    .then(() => loadFolders());
+            }
+        }
+
+        // 선택된 장소 삭제
+        function deleteSelectedPlaces(folderId) {
+            const checkboxes = document.querySelectorAll(`.place-checkbox[data-folder-id="${folderId}"]:checked`);
+            const placeIds = Array.from(checkboxes).map(checkbox => checkbox.getAttribute('data-place-id'));
+
+            if (placeIds.length > 0) {
+                const confirmation = confirm("선택된 장소를 삭제하시겠습니까?");
+                if (confirmation) {
+                    fetch(`/remove_places`, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ place_ids: placeIds })
+                    }).then(() => loadPlaces(folderId));
+                }
+            } else {
+                alert("삭제할 장소를 선택해주세요.");
+            }
+        }
+        // 페이지 로드 시 폴더 목록 로드
+        window.onload = loadFolders;
+    </script>
+</body>
+</html>
