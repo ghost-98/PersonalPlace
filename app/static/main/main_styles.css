@@ -63,6 +63,7 @@ body {
     display: flex;
     justify-content: space-between;
     gap: 10px; /* 버튼 간격 */
+    margin-bottom: 20px;
 }
 
 .custom-btn {
@@ -88,6 +89,7 @@ body {
 
 .search-results {
     margin-top: 20px;
+    margin-bottom: 20px;
 }
 
 .search-results .result-item {

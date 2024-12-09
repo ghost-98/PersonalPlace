@@ -22,6 +22,9 @@ function showSearchPanel() {
     document.getElementById('search-btn').classList.add('btn-primary');
     document.getElementById('folder-btn').classList.remove('btn-secondary');
     document.getElementById('folder-btn').classList.add('btn-outline-secondary');
+
+    // 검색 결과 초기화
+    document.getElementById('search-results').innerHTML = '';
 }
 
 function showFolderPanel() {
@@ -48,6 +51,9 @@ function showFolderPanel() {
                 folderList.appendChild(folderItem);
             });
         });
+
+    // 검색 결과 초기화
+    document.getElementById('search-results').innerHTML = '';
 }
 
 // 장소 검색
